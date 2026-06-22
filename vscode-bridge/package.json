@@ -1,0 +1,10 @@
+{
+  "name": "ai-monitor-bridge",
+  "version": "1.0.0",
+  "engines": { "vscode": "^1.80.0" },
+  "activationEvents": ["*"],
+  "main": "./extension.js",
+  "contributes": {
+    "commands": [{ "command": "ai-monitor.send", "title": "Send AI Status" }]
+  }
+}

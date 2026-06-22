@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {
+            margin: 0; padding: 0; overflow: hidden; height: 100vh; color: #1c2833;
+            background: rgba(238, 242, 245, 0.65); backdrop-filter: blur(20px);
+            border: 1px solid rgba(0, 0, 0, 0.15); border-radius: 8px;
+            font-family: 'Microsoft YaHei', sans-serif; box-sizing: border-box; cursor: grab;
+            -webkit-user-select: none; user-select: none;
+        }
+        body:active { cursor: grabbing; }
+
+        .main-dashboard { position: relative; height: 86px; padding: 4px 6px; box-sizing: border-box; }
+
+        #timer, #token-counter, #cost-display {
+            position: absolute; font-family: monospace; cursor: pointer; z-index: 9999; transition: color 0.1s ease;
+            font-size: 14px; font-weight: 900; color: #1c2833;
+        }
+        #timer { left: 14px; top: 6px; } 
+        #token-counter { right: 14px; top: 6px; }  
+        #cost-display { right: 14px; top: 26px; }
+
+        #timer:hover, #token-counter:hover, #cost-display:hover { color: #00a8ff !important; }
+
+        .center-box { position: absolute; left: 80px; top: 4px; width: 120px; display: flex; flex-direction: column; align-items: center; }
+        #status-text { font-size: 11px; font-weight: 900; color: #2c3e50; white-space: nowrap; }
+        #log-text { font-size: 10px; color: #006266; font-weight: 900; margin: 1px 0 0 0; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; }
+        
+        /* 【状态灯放大】：物理直径由 16px 精准放大至 20px，加大横向 gap 间隔，完美固定在 44px 专属中轨 */
+        .lights { position: absolute; left: 80px; top: 44px; width: 120px; display: flex; gap: 22px; justify-content: center; }
+        .light { width: 20px; height: 20px; border-radius: 50%; background-color: rgba(0, 0, 0, 0.1); box-shadow: inset 0 2px 4px rgba(0,0,0,0.15); }
+        body.state-working .light.red { background-color: #ff4757; box-shadow: 0 0 14px #ff4757, inset 0 1px 2px #fff; }
+        @keyframes y-flash { 0% { background-color: #ffa502; box-shadow: 0 0 14px #ffa502; } 100% { background-color: rgba(0,0,0,0.1); } }
+        body.state-attention .light.yellow { animation: y-flash 0.14s infinite alternate; }
+        @keyframes g-flash { 0% { background-color: #2ed573; box-shadow: 0 0 14px #2ed573; } 100% { background-color: rgba(0,0,0,0.1); } }
+        body.state-done .light.green { animation: g-flash 0.12s infinite alternate; }
+        
+        #day-panel {
+            position: absolute; left: 14px; bottom: 6px; right: 14px;
+            display: flex; justify-content: space-between; gap: 20px;
+            font-family: monospace; font-size: 12px; font-weight: 900; color: #ff4757;
+            z-index: 9999; white-space: nowrap; 
+        }
+        #day-cost-display { cursor: pointer; transition: color 0.1s ease; }
+        #day-cost-display:hover { color: #00a8ff !important; }
+
+        .sub-panel { display: none; padding: 8px 10px; border-top: 1px dashed rgba(0,0,0,0.15); font-size: 14px; font-weight: 900; box-sizing: border-box; z-index: 9998; position: relative; }
+        .sub-panel input { width: 54px; font-size: 14px; font-weight: 900; padding: 1px 2px; border: 1px solid #1c2833; border-radius: 4px; text-align: center; color: #1c2833; background: rgba(255,255,255,0.8); }
+        .sub-panel btn { background: #00766c; color: white; padding: 2px 8px; border-radius: 4px; cursor: pointer; float: right; font-weight: 900; font-size: 13px; margin-top: 2px; }
+        #rate-sync-status { color: #00766c; font-weight: 900; font-size: 11px; cursor: pointer; margin-left: 2px; }
+        
+        #audit-table-wrapper { max-height: 230px; overflow-y: auto; overflow-x: hidden; width: 100%; color: #1c2833; box-sizing: border-box; }
+        table { width: 100%; border-collapse: collapse; text-align: center; table-layout: fixed; }
+        th, td { padding: 4px 1px; border: 1px solid rgba(0, 0, 0, 0.15); font-weight: 900; font-size: 10px; font-family: monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        th { background: rgba(0, 0, 0, 0.04); color: #2c3e50; }
+        
+        #close-btn { position: absolute; right: 2px; top: 2px; cursor: pointer; color: #888; font-size: 10px; display: none; z-index: 9999; }
+        body:hover #close-btn { display: block; }
+        #close-btn:hover { color: #ff4757 !important; }
+    </style>
+</head>
+<body id="widget-body">
+    <div id="close-btn">×</div>
+    <div class="main-dashboard">
+        <div id="timer" title="点击查看审计日志">00:00</div>
+        <div id="token-counter" title="点击配置计价规则">0.0K</div>
+        <div id="cost-display" title="点击切换结算币种">￥0.00</div>
+        
+        <div class="center-box">
+            <div id="status-text">系统待机</div>
+            <div id="log-text">等待指令</div>
+        </div>
+        
+        <div class="lights"><div class="light red"></div><div class="light yellow"></div><div class="light green"></div></div>
+
+        <div id="day-panel">
+            <div>今日Token: <span id="day-token-counter">0.0K</span></div>
+            <div>今日花费: <span id="day-cost-display" title="点击切换全局结算币种">￥0.0000</span></div>
+        </div>
+    </div>
+    
+    <div id="settings-panel" class="sub-panel">
+        单价/M: <input id="cfg-price" type="number" step="0.001"> 
+        汇率: <input id="cfg-rate" type="number" step="0.01">
+        <span id="rate-sync-status">[自动同步]</span>
+        <btn id="btn-save-cfg">保存</btn>
+    </div>
+    
+    <div id="audit-panel" class="sub-panel">
+        <btn id="btn-copy-audit" style="float:none; display:inline-block; margin-bottom:6px;">一键复制文本</btn>
+        <div id="audit-table-wrapper">
+            <table>
+                <colgroup><col style="width: 33%;"><col style="width: 20%;"><col style="width: 25%;"><col style="width: 22%;"></colgroup>
+                <thead><tr><th>启动</th><th>历时</th><th>Token</th><th>开销</th></tr></thead>
+                <tbody id="audit-tbody"></tbody>
+            </table>
+        </div>
+    </div>
+    <script src="src/renderer.js"></script>
+</body>
+</html>
