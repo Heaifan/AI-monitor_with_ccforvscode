@@ -11,7 +11,6 @@ const eventHandler = require(path.join(__dirname, 'src', 'eventHandler.js'));
 
 let timerId = null, startTime = 0, lastRawTokens = 0, lastDayTokens = 0, lastLoggedToken = -1;
 
-// 【核心修复】：重新全量注入因重构意外遗失的水晶音效芯片，彻底扑灭 playCrystalChime 未定义报错
 function playCrystalChime() {
     const ctx = new (window.AudioContext || window.webkitAudioContext)(); const now = ctx.currentTime;
     const strike = (freq, sTime, vol) => {
@@ -42,14 +41,11 @@ eventHandler.init(doms, costManager, historyLogger, () => lastRawTokens, () => l
 
 ipcRenderer.on('status-update', (event, data) => {
     const { state, detail, tokens, dayTokens } = data;
-    const rawTokens = parseInt(tokens || 0, 10);
-    const dayRawTokens = parseInt(dayTokens || 0, 10);
-    lastRawTokens = rawTokens;
-    lastDayTokens = dayRawTokens;
+    const rawTokens = parseInt(tokens || 0, 10); const dayRawTokens = parseInt(dayTokens || 0, 10);
+    lastRawTokens = rawTokens; lastDayTokens = dayRawTokens;
     
     doms.tokenText.innerText = `${(rawTokens / 1000).toFixed(1)}K`;
     doms.costDisplay.innerText = costManager.calculateCostString(rawTokens);
-    
     doms.dayTokenText.innerText = `${(dayRawTokens / 1000).toFixed(1)}K`;
     doms.dayCostText.innerText = costManager.calculateCostString(dayRawTokens);
 
@@ -67,11 +63,12 @@ ipcRenderer.on('status-update', (event, data) => {
         document.body.className = 'state-done'; doms.statusText.innerText = '任务已完成'; doms.logText.innerText = '输出答案完毕';
         if (timerId) { clearInterval(timerId); timerId = null; }
         if (rawTokens > 0 && rawTokens !== lastLoggedToken) {
-            lastLoggedToken = rawTokens;
-            const row = historyLogger.markEnd(rawTokens, doms.costDisplay.innerText);
+            lastLoggedToken = rawTokens; const row = historyLogger.markEnd(rawTokens, doms.costDisplay.innerText);
             if (row) doms.tbodyEl.insertAdjacentHTML('beforeend', row);
+            // 【DOM 滑动窗截断】：当历史明细超过 50 行时，自动物理剪流，死锁 V8 内存漂移风险
+            if (doms.tbodyEl.children.length > 50) doms.tbodyEl.removeChild(doms.tbodyEl.firstElementChild);
         }
-        playCrystalChime(); // 这里已经满血复活！
+        playCrystalChime();
     } else { document.body.className = ''; doms.statusText.innerText = '系统待机'; doms.logText.innerText = '等待指令'; if (timerId) { clearInterval(timerId); timerId = null; } doms.timerText.innerText = '00:00'; }
     document.body.offsetHeight;
 });

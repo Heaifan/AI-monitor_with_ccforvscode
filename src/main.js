@@ -8,14 +8,12 @@ const server = express();
 server.use(express.json());
 
 function createWindow() {
-    // 【架构加宽拉长】：标准外壳全面拓展至 280px 宽、86px 高，为大字体横摆提供充沛空间
     win = new BrowserWindow({
         width: 280, height: 86, x: Math.round((require('electron').screen.getPrimaryDisplay().workAreaSize.width / 2) - 140), y: 15,
         transparent: true, frame: false, alwaysOnTop: true, resizable: false,
         webPreferences: { nodeIntegration: true, contextIsolation: false }
     });
     win.loadFile('renderer.html');
-    console.log('[PROBE-MAIN] 280x86 宽幅工业视窗外壳就绪。');
 
     win.webContents.on('did-finish-load', () => {
         startWatching((effectiveLine, isColdStart, recoveryData) => {
@@ -55,10 +53,8 @@ server.listen(8080);
 
 ipcMain.on('resize-window', (e, { width, height }) => {
     if (!win) return; win.setResizable(true);
-    // 对齐 280 物理基准线变形变换
-    const targetW = (width === 220 || width === 250) ? 280 : width;
-    const targetH = (height === 80 || height === 96) ? 86 : height;
-    win.setSize(targetW, targetH); win.setResizable(false);
+    win.setSize((width === 220 || width === 250) ? 280 : width, (height === 80 || height === 96) ? 86 : height);
+    win.setResizable(false);
 });
 ipcMain.on('terminal-log', (e, msg) => { console.log(msg); });
 ipcMain.on('window-move', (e, { deltaX, deltaY }) => { if (win) { const [x, y] = win.getPosition(); win.setPosition(x + deltaX, y + deltaY); } });

@@ -2,6 +2,8 @@ const chokidar = require('chokidar');
 const fs = require('fs');
 const path = require('path');
 
+let changeThrottleTimer = null; // 流式数据重绘节流拦截器
+
 function getLinesTokens(line) {
     if (!line || !line.includes('"usage"')) return 0;
     const inM = line.match(/"input_tokens":\s*(\d+)/);
@@ -17,13 +19,12 @@ function getTodayJsonlFiles(dir) {
         for (const subdir of subdirs) {
             const subdirPath = path.join(dir, subdir);
             if (fs.statSync(subdirPath).isDirectory()) {
-                const files = fs.readdirSync(subdirPath);
-                for (const file of files) {
+                fs.readdirSync(subdirPath).forEach(file => {
                     if (file.endsWith('.jsonl')) {
                         const filePath = path.join(subdirPath, file); const stat = fs.statSync(filePath);
                         if (stat.mtime.toDateString() === todayStr) filesList.push({ filePath, mtime: stat.mtime.getTime() });
                     }
-                }
+                });
             }
         }
     } catch (e) {}
@@ -32,8 +33,8 @@ function getTodayJsonlFiles(dir) {
 
 function computeFileMaxTokens(filePath) {
     try {
-        let max = 0; const content = fs.readFileSync(filePath, 'utf-8');
-        content.split('\n').forEach(line => { const t = getLinesTokens(line); if (t > max) max = t; });
+        let max = 0;
+        fs.readFileSync(filePath, 'utf-8').split('\n').forEach(line => { const t = getLinesTokens(line); if (t > max) max = t; });
         return max;
     } catch (e) { return 0; }
 }
@@ -49,7 +50,6 @@ function analyzeActiveFile(filePath, dayTokensBaseline) {
         }
         let watermark = 0;
         for (let i = 0; i <= lastEndTurnIdx; i++) { const t = getLinesTokens(lines[i]); if (t > watermark) watermark = t; }
-        
         const activeLines = lines.slice(lastEndTurnIdx + 1);
         if (activeLines.length === 0) return { isMidTurnActive: false, watermark, latestFileMaxTokens, dayTokensBaseline, lastLine: lines[lines.length - 1] };
         let totalTokens = 0, startTimestamp = null;
@@ -70,11 +70,17 @@ function startWatching(onLogMessage) {
     todayFiles.forEach(f => { if (f.filePath !== latestFile) dayTokensBaseline += computeFileMaxTokens(f.filePath); });
     const recoveryData = analyzeActiveFile(latestFile, dayTokensBaseline);
     if (recoveryData) onLogMessage(recoveryData.lastLine, true, recoveryData);
+    
     chokidar.watch(logPath).on('change', (filePath) => {
         if (!filePath.endsWith('.jsonl')) return;
-        const content = fs.readFileSync(filePath, 'utf-8').trim(); if (!content) return;
-        const lines = content.split('\n'), lastLine = lines[lines.length - 1]?.trim();
-        if (lastLine) onLogMessage(lastLine, false, recoveryData);
+        // 【I/O 降频节流阀】：将流式高频刷写强制合并，防止微秒级重绘引发 CPU 发生不必要抖动
+        if (changeThrottleTimer) return;
+        changeThrottleTimer = setTimeout(() => {
+            changeThrottleTimer = null;
+            const content = fs.readFileSync(filePath, 'utf-8').trim(); if (!content) return;
+            const lines = content.split('\n'), lastLine = lines[lines.length - 1]?.trim();
+            if (lastLine) onLogMessage(lastLine, false, recoveryData);
+        }, 60);
     });
 }
 
