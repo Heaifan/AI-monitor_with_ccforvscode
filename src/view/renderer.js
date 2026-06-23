@@ -14,6 +14,7 @@ const audioChime = require('./src/utils/audioChime.js');
 
 let lastRawTokens = 0, lastDayTokens = 0, lastLoggedToken = -1;
 let lastProbeState = null;
+let activeTurnStarted = false;
 
 function formatTokenCount(tokens) {
     const value = tokens || 0;
@@ -66,8 +67,11 @@ ipcRenderer.on('status-update', (event, data) => {
     }
 
     if (state === 'working') {
-        historyLogger.markStart(recoveredStartTime || Date.now());
-        uiTimer.start(doms.timerText, recoveredStartTime);
+        if (!activeTurnStarted) {
+            activeTurnStarted = true;
+            historyLogger.markStart(recoveredStartTime || Date.now());
+            uiTimer.start(doms.timerText, recoveredStartTime);
+        }
     } else if (state === 'done') {
         uiTimer.stop(doms.timerText);
         if (rawTokens > 0 && rawTokens !== lastLoggedToken) {
@@ -77,8 +81,10 @@ ipcRenderer.on('status-update', (event, data) => {
             domTruncator.truncate(doms.tbodyEl, 50);
         }
         audioChime.play();
+        activeTurnStarted = false;
     } else if (state !== 'attention') {
         uiTimer.stop(doms.timerText, true);
+        activeTurnStarted = false;
     }
 
     document.body.offsetHeight;

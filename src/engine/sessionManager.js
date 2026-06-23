@@ -1,6 +1,6 @@
 // src/engine/sessionManager.js
-const WORKING_KEEPALIVE_MS = 15000;
-const COMPLETION_GRACE_MS = 30000;
+const WORKING_KEEPALIVE_MS = 180000;
+const COMPLETION_GRACE_MS = 180000;
 
 let macroTimer = null;
 let sessionState = 'idle'; // idle, working, cohesion

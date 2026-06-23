@@ -1,10 +1,10 @@
 // src/engine/logParser.js
 const costManager = require('../cost/costManager');
 
-let roundStartTokens = 0;
-let roundStartCost = 0;
-let lastAbsoluteTotal = 0;
-let lastAbsoluteCost = 0;
+let roundTokens = 0;
+let roundCost = 0;
+let activeFileTokens = 0;
+let activeFileCost = 0;
 let dayBaselineTokens = 0;
 let dayBaselineCost = 0;
 
@@ -38,44 +38,43 @@ function detectDetail(activeLines) {
 
 module.exports = {
     resetTurn: () => {
-        roundStartTokens = lastAbsoluteTotal;
-        roundStartCost = lastAbsoluteCost;
+        roundTokens = 0;
+        roundCost = 0;
     },
-    setWatermark: (tokens, cost, stableTokens = tokens, stableCost = cost) => {
-        lastAbsoluteTotal = tokens || 0;
-        lastAbsoluteCost = cost || 0;
-        roundStartTokens = stableTokens || 0;
-        roundStartCost = stableCost || 0;
+    setWatermark: (tokens, cost) => {
+        activeFileTokens = tokens || 0;
+        activeFileCost = cost || 0;
     },
     setDayBaseline: (tokens, cost) => {
         dayBaselineTokens = tokens || 0;
         dayBaselineCost = cost || 0;
     },
-    getRoundTokens: () => Math.max(0, lastAbsoluteTotal - roundStartTokens),
-    getLiveDayTotal: () => safeAdd(dayBaselineTokens, lastAbsoluteTotal),
-    getRoundCostStr: () => costManager.formatCost(Math.max(0, lastAbsoluteCost - roundStartCost)),
-    getLiveDayCostStr: () => costManager.formatCost(safeAdd(dayBaselineCost, lastAbsoluteCost)),
+    getRoundTokens: () => Math.max(0, roundTokens),
+    getLiveDayTotal: () => safeAdd(dayBaselineTokens, activeFileTokens),
+    getRoundCostStr: () => costManager.formatCost(Math.max(0, roundCost)),
+    getLiveDayCostStr: () => costManager.formatCost(safeAdd(dayBaselineCost, activeFileCost)),
 
-    parse: (activeLines) => {
-        const usage = costManager.getUniqueUsage(activeLines || []);
-        const usageTokens = usage.totalTokens || 0;
-        const usageCost = usage.cost || 0;
+    parse: (activeLines, fileStatus = null) => {
+        activeFileTokens = fileStatus?.latestFileMaxTokens || activeFileTokens;
+        activeFileCost = fileStatus?.latestFileMaxCost || activeFileCost;
+        dayBaselineTokens = fileStatus?.dayTokensBaseline || dayBaselineTokens;
+        dayBaselineCost = fileStatus?.dayCostBaseline || dayBaselineCost;
+
         const estimatedTokens = estimateTextTokens(activeLines);
+        const taskDeltaTokens = fileStatus?.taskDeltaTokens || 0;
+        const taskDeltaCost = fileStatus?.taskDeltaCost || 0;
 
-        const liveRoundTokens = usageTokens > 0 ? usageTokens : estimatedTokens;
-        const liveRoundCost = usageCost > 0 ? usageCost : costManager.getInterimCost(estimatedTokens);
-
-        lastAbsoluteTotal = safeAdd(roundStartTokens, liveRoundTokens);
-        lastAbsoluteCost = safeAdd(roundStartCost, liveRoundCost);
+        roundTokens = taskDeltaTokens > 0 ? taskDeltaTokens : estimatedTokens;
+        roundCost = taskDeltaCost > 0 ? taskDeltaCost : costManager.getInterimCost(estimatedTokens);
 
         return {
             action: 'send',
             state: 'working',
             detail: detectDetail(activeLines),
-            tokens: String(Math.max(0, liveRoundTokens)),
-            dayTokens: String(safeAdd(dayBaselineTokens, lastAbsoluteTotal)),
-            costStr: costManager.formatCost(Math.max(0, liveRoundCost)),
-            dayCostStr: costManager.formatCost(safeAdd(dayBaselineCost, lastAbsoluteCost))
+            tokens: String(Math.max(0, roundTokens)),
+            dayTokens: String(safeAdd(dayBaselineTokens, activeFileTokens)),
+            costStr: costManager.formatCost(Math.max(0, roundCost)),
+            dayCostStr: costManager.formatCost(safeAdd(dayBaselineCost, activeFileCost))
         };
     }
 };

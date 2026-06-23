@@ -5,10 +5,18 @@ const fileScanner = require('./fileScanner');
 const turnAnalyzer = require('../engine/turnAnalyzer');
 
 let currentActiveFile = null;
+let taskBaselineKeys = null;
+
+function getTodayFilePaths() {
+    const todayFiles = fileScanner.getTodayJsonlFiles();
+    return {
+        todayFiles,
+        filePaths: todayFiles.map((file) => file.filePath)
+    };
+}
 
 function getDayBaselineForActive(activeFilePath) {
-    const todayFiles = fileScanner.getTodayJsonlFiles();
-    const filePaths = todayFiles.map((file) => file.filePath);
+    const { todayFiles, filePaths } = getTodayFilePaths();
     const dayUsage = turnAnalyzer.computeFilesMaxTokensAndCost(filePaths);
     const activeUsage = turnAnalyzer.computeFileMaxTokensAndCost(activeFilePath);
 
@@ -19,10 +27,25 @@ function getDayBaselineForActive(activeFilePath) {
     };
 }
 
+function resetTaskBaseline() {
+    const { filePaths } = getTodayFilePaths();
+    taskBaselineKeys = turnAnalyzer.getUsageKeysFromFiles(filePaths);
+}
+
+function getTaskDelta() {
+    if (!taskBaselineKeys) return { maxTokens: 0, maxCost: 0 };
+    const { filePaths } = getTodayFilePaths();
+    return turnAnalyzer.computeUsageDeltaFromFiles(filePaths, taskBaselineKeys);
+}
+
 function routeFile(filePath, isColdStart, onRouteMessage) {
     const baseline = getDayBaselineForActive(filePath);
     const result = turnAnalyzer.analyzeActiveFile(filePath, baseline.tokens, baseline.cost);
-    if (result) onRouteMessage(result.activeLines, isColdStart, result);
+    if (result) {
+        result.taskDeltaTokens = getTaskDelta().maxTokens;
+        result.taskDeltaCost = getTaskDelta().maxCost;
+        onRouteMessage(result.activeLines, isColdStart, result);
+    }
 }
 
 module.exports = {
@@ -35,6 +58,7 @@ module.exports = {
             todayFiles.sort((a, b) => b.mtime - a.mtime);
             currentActiveFile = todayFiles[0].filePath;
             console.log(`【日志路由】当前活跃日志：${path.basename(currentActiveFile)}`);
+            resetTaskBaseline();
             routeFile(currentActiveFile, true, onRouteMessage);
         } else {
             console.log('【日志路由】暂未发现今日日志，等待监听器捕获新写入');
@@ -49,7 +73,9 @@ module.exports = {
                 currentActiveFile = filePath;
             }
 
+            if (!taskBaselineKeys) resetTaskBaseline();
             routeFile(filePath, Boolean(isSwitchingActiveFile), onRouteMessage);
         });
-    }
+    },
+    resetTaskBaseline
 };

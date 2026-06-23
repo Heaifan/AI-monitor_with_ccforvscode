@@ -25,7 +25,11 @@ function broadcast(state, detail) {
 }
 
 function scheduleDone() {
-    sessionManager.triggerDone(() => broadcast('done', DETAIL.done));
+    sessionManager.triggerDone(() => {
+        broadcast('done', DETAIL.done);
+        fileRouter.resetTaskBaseline();
+        logParser.resetTurn();
+    });
 }
 
 function scheduleWorking() {
@@ -64,7 +68,7 @@ module.exports = {
                 return;
             }
 
-            const result = logParser.parse(activeLines);
+            const result = logParser.parse(activeLines, fileStatus);
             sessionManager.refreshWorking(() => broadcast('done', DETAIL.done));
             console.log(`【遥测枢纽】日志流更新：活跃行数=${activeLines?.length}，状态机=${sessionManager.getState()}`);
 
@@ -93,7 +97,10 @@ module.exports = {
     handleHttpStatus: (state, detail) => {
         console.log(`【遥测枢纽】收到本地 HTTP 状态通知：状态=${state}，详情=${detail || ''}`);
         if (state === 'working') {
-            if (!sessionManager.isActive()) logParser.resetTurn();
+            if (!sessionManager.isActive()) {
+                fileRouter.resetTaskBaseline();
+                logParser.resetTurn();
+            }
             scheduleWorking();
             broadcast('working', detail || DETAIL.working);
         } else if (state === 'done') {

@@ -109,10 +109,33 @@ function computeUniqueUsage(lines) {
     return sumUsages([...seen.values()]);
 }
 
+function collectUniqueUsages(lines) {
+    const seen = new Map();
+    (lines || []).forEach((line, index) => {
+        const usage = parseLineUsage(line);
+        if (!usage) return;
+        const key = usage.messageId || `${index}:${usage.totalTokens}:${usage.cost}`;
+        seen.set(key, usage);
+    });
+    return seen;
+}
+
+function computeUsageDelta(lines, baselineKeys) {
+    const seen = collectUniqueUsages(lines);
+    const baseline = baselineKeys || new Set();
+    const deltaUsages = [];
+    seen.forEach((usage, key) => {
+        if (!baseline.has(key)) deltaUsages.push(usage);
+    });
+    return sumUsages(deltaUsages);
+}
+
 module.exports = {
     rates: DEEPSEEK_V4_FLASH_RATES,
     parseLineUsage,
     computeUniqueUsage,
+    collectUniqueUsages,
+    computeUsageDelta,
     computeLineTokens: (line) => {
         const usage = parseLineUsage(line);
         return usage ? usage.totalTokens : 0;

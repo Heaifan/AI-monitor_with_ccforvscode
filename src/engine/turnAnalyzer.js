@@ -48,6 +48,27 @@ function computeFilesMaxTokensAndCost(filePaths) {
     return computeUsageFromLines(lines);
 }
 
+function getTodayLinesFromFiles(filePaths) {
+    const lines = [];
+    (filePaths || []).forEach((filePath) => {
+        lines.push(...getTodayLines(filePath));
+    });
+    return lines;
+}
+
+function getUsageKeysFromFiles(filePaths) {
+    return new Set(costManager.getUniqueUsageMap(getTodayLinesFromFiles(filePaths)).keys());
+}
+
+function computeUsageDeltaFromFiles(filePaths, baselineKeys) {
+    const usage = costManager.getUsageDelta(getTodayLinesFromFiles(filePaths), baselineKeys);
+    return {
+        maxTokens: usage.totalTokens || 0,
+        maxCost: usage.cost || 0,
+        usage
+    };
+}
+
 function findTurnBoundary(lines) {
     let lastEndIdx = -1;
     let prevEndIdx = -1;
@@ -110,4 +131,10 @@ function analyzeActiveFile(filePath, dayTokensBaseline, dayCostBaseline) {
     };
 }
 
-module.exports = { computeFileMaxTokensAndCost, computeFilesMaxTokensAndCost, analyzeActiveFile };
+module.exports = {
+    computeFileMaxTokensAndCost,
+    computeFilesMaxTokensAndCost,
+    computeUsageDeltaFromFiles,
+    getUsageKeysFromFiles,
+    analyzeActiveFile
+};
