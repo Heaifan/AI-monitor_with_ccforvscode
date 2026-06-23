@@ -11,7 +11,7 @@ ai_monitor-app/
 │   ├── cost/                           # 费用与 token 计价域
 │   │   ├── billingEngine.js            # usage 行解析、token 与费用计算
 │   │   ├── costManager.js              # 计价门面与兼容接口聚合
-│   │   └── legacyAdapter.js            # 旧版前台接口兼容垫片
+│   │   └── legacyAdapter.js            # 旧版前台接口、配置保存与币种切换兼容垫片
 │   ├── engine/                         # 状态机、日志解析与遥测调度域
 │   │   ├── logParser.js                # 活跃回合日志解析与实时计数
 │   │   ├── sessionManager.js           # idle / working / cohesion 状态机
@@ -25,9 +25,9 @@ ai_monitor-app/
 │   ├── utils/                          # 前台辅助工具
 │   │   ├── audioChime.js               # 完成提示音
 │   │   ├── domTruncator.js             # 审计表行数裁剪
-│   │   └── historyLogger.js            # 回合审计历史记录
+│   │   └── historyLogger.js            # 回合审计历史记录与复制文本生成
 │   └── view/                           # 渲染进程 UI 逻辑
-│       ├── eventHandler.js             # 点击、面板、关闭等事件绑定
+│       ├── eventHandler.js             # 点击、面板、拖动、关闭、复制等事件绑定
 │       ├── renderer.js                 # status-update 消费、DOM 映射与中文渲染探针
 │       └── uiTimer.js                  # 回合计时器
 └── vscode-bridge/

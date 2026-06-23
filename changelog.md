@@ -1,5 +1,12 @@
 # changelog.md
 
+## [2.7.8] - 2026-06-23 14:27
+- 修复重构后点击事件“看似全部失效”的问题：恢复计时器审计面板、Token 配置面板、费用切换、保存配置、同步汇率、复制审计、关闭应用与窗口拖动等 pointer 事件。
+- `eventHandler.js` 改为内部维护当前打开面板状态，不再依赖已删除的旧版 `historyLogger.isOpen()` / `costManager.isOpen()` 状态。
+- 为 `.sub-panel.active` 与 `.sub-panel.visible` 增加显示样式，避免只切 class 但面板仍 `display: none`。
+- 补齐 `legacyAdapter.js` 的 `setPrice` / `setRate` / `toggleCurrency` / `calculateCostString` 兼容能力，防止保存配置与费用刷新时报错。
+- 重写 `historyLogger.js` 的复制文本为干净 UTF-8 中文，避免审计复制内容乱码。
+
 ## [2.7.7] - 2026-06-23 14:23
 - 将启动、HTTP、日志扫描、文件监听、遥测枢纽、状态机与渲染进程探针统一改为中文输出，便于直接在 `npm start` 终端阅读。
 - 为 `renderer.html` 增加 Content-Security-Policy 元信息，减少开发期 Electron 安全策略告警干扰。
