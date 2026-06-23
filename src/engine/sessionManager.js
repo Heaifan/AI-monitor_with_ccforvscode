@@ -1,32 +1,39 @@
+// src/engine/sessionManager.js
+const WORKING_KEEPALIVE_MS = 15000;
+const COMPLETION_GRACE_MS = 30000;
+
 let macroTimer = null;
-let sessionState = 'idle'; // 'idle', 'working', 'cohesion'
+let sessionState = 'idle'; // idle, working, cohesion
+
+function resetTimer(onTimeout, timeoutMs) {
+    if (macroTimer) clearTimeout(macroTimer);
+    macroTimer = setTimeout(() => {
+        sessionState = 'idle';
+        onTimeout();
+    }, timeoutMs);
+}
 
 module.exports = {
     getState: () => sessionState,
     isActive: () => sessionState === 'working' || sessionState === 'cohesion',
-    
+
     triggerWorking: (onTimeout) => {
-        if (macroTimer) clearTimeout(macroTimer);
         sessionState = 'working';
-        // 【极致响应】：全面换装 5秒 保护时窗，实现秒级快速判定自愈
-        console.log('【状态机】状态切入 working，启动 5 秒保护窗口');
-        macroTimer = setTimeout(() => { sessionState = 'idle'; onTimeout(); }, 5000);
+        console.log(`【状态机】状态切入 working，启动 ${WORKING_KEEPALIVE_MS / 1000} 秒工作保活窗口`);
+        resetTimer(onTimeout, WORKING_KEEPALIVE_MS);
     },
-    
+
     refreshWorking: (onTimeout) => {
-        if (sessionState === 'working') {
-            if (macroTimer) clearTimeout(macroTimer);
-            console.log('【状态机】检测到日志仍在更新，5 秒工作倒计时顺延');
-            macroTimer = setTimeout(() => { sessionState = 'idle'; onTimeout(); }, 5000);
-        }
+        if (sessionState !== 'working' && sessionState !== 'cohesion') return;
+        sessionState = 'working';
+        console.log(`【状态机】检测到日志仍在更新，${WORKING_KEEPALIVE_MS / 1000} 秒工作倒计时顺延`);
+        resetTimer(onTimeout, WORKING_KEEPALIVE_MS);
     },
-    
+
     triggerDone: (onTimeout) => {
-        if (macroTimer) clearTimeout(macroTimer);
-        if (sessionState === 'working' || sessionState === 'cohesion') {
-            sessionState = 'cohesion';
-            console.log('【状态机】阶段任务触发 done，切入 cohesion，进入 5 秒合流观察期');
-            macroTimer = setTimeout(() => { sessionState = 'idle'; onTimeout(); }, 5000);
-        }
+        if (sessionState !== 'working' && sessionState !== 'cohesion') return;
+        sessionState = 'cohesion';
+        console.log(`【状态机】检测到 end_turn，进入 ${COMPLETION_GRACE_MS / 1000} 秒完成观察期`);
+        resetTimer(onTimeout, COMPLETION_GRACE_MS);
     }
 };

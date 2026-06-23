@@ -1,23 +1,45 @@
+// vscode-bridge/extension.js
 const vscode = require('vscode');
 const http = require('http');
 
-function sendStatus(state) {
+const ACTIVE_KEYWORDS = [
+    'thinking',
+    'generating',
+    'progress',
+    'executing',
+    'working',
+    'running',
+    '正在',
+    '思考',
+    '生成',
+    '执行',
+    '塑造',
+    '处理中',
+    '排队'
+];
+
+function sendStatus(state, detail = '') {
     const req = http.request({
-        hostname: '127.0.0.1', port: 8080, path: '/status',
-        method: 'POST', headers: { 'Content-Type': 'application/json' }
+        hostname: '127.0.0.1',
+        port: 8080,
+        path: '/status',
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
     });
-    req.write(JSON.stringify({ state }));
+    req.on('error', () => {});
+    req.write(JSON.stringify({ state, detail }));
     req.end();
 }
 
 function activate(context) {
-    vscode.window.onDidChangeStatusBarMessage((e) => {
-        if (!e) return;
-        const msg = (typeof e === 'string' ? e : e.text).toLowerCase();
-        // 只要状态栏包含高负载动态词，持续刷新主进程的活跃时间戳
-        if (msg.includes('thinking') || msg.includes('generating') || msg.includes('progress') || msg.includes('executing')) {
-            sendStatus('working');
+    const disposable = vscode.window.onDidChangeStatusBarMessage((event) => {
+        if (!event) return;
+        const text = (typeof event === 'string' ? event : event.text || '').toLowerCase();
+        if (ACTIVE_KEYWORDS.some((keyword) => text.includes(keyword.toLowerCase()))) {
+            sendStatus('working', 'VS Code 状态栏仍在工作');
         }
     });
+    context.subscriptions.push(disposable);
 }
+
 exports.activate = activate;

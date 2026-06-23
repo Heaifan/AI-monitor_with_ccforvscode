@@ -18,8 +18,8 @@ ai_monitor-app/
 │   │   └── legacyAdapter.js            # 旧版前台接口、配置保存与币种切换兼容垫片
 │   ├── engine/                         # 状态机、日志解析与遥测调度域
 │   │   ├── logParser.js                # 活跃回合日志解析与实时计数
-│   │   ├── sessionManager.js           # idle / working / cohesion 状态机
-│   │   ├── telemetryHub.js             # 文件日志与 HTTP 状态的统一广播枢纽
+│   │   ├── sessionManager.js           # idle / working / cohesion 状态机与完成观察期
+│   │   ├── telemetryHub.js             # 文件日志、HTTP 状态与保守完成判定的统一广播枢纽
 │   │   └── turnAnalyzer.js             # JSONL 回合边界、timestamp 归日、冷启动水位与日基线分析
 │   ├── io/                             # 文件扫描、监听、路由与本地 HTTP 网关
 │   │   ├── fileRouter.js               # 冷启动扫描、活跃日志路由与跨文件全局去重日基线
@@ -36,4 +36,4 @@ ai_monitor-app/
 │       └── uiTimer.js                  # 回合计时器
 └── vscode-bridge/
     ├── package.json                    # VS Code 扩展声明
-    └── extension.js                    # VS Code 状态栏到本地 HTTP 网关的桥接
+    └── extension.js                    # VS Code 中英文状态栏到本地 HTTP 网关的工作心跳桥接
