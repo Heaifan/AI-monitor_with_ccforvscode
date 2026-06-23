@@ -19,7 +19,7 @@ module.exports = {
                 }
             });
         } catch (e) {
-            console.log(`[PROBE-SCAN:WARN] unable to scan ${logPath}: ${e.message}`);
+            console.log(`【日志扫描:警告】无法扫描 ${logPath}：${e.message}`);
         }
         return list;
     }

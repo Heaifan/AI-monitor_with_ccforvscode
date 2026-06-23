@@ -1,5 +1,11 @@
 # changelog.md
 
+## [2.7.7] - 2026-06-23 14:23
+- 将启动、HTTP、日志扫描、文件监听、遥测枢纽、状态机与渲染进程探针统一改为中文输出，便于直接在 `npm start` 终端阅读。
+- 为 `renderer.html` 增加 Content-Security-Policy 元信息，减少开发期 Electron 安全策略告警干扰。
+- 主进程转发渲染进程日志时过滤 Electron Security Warning，避免诊断日志被框架噪声淹没。
+- 规范 `src/view/renderer.js` 为 UTF-8 中文探针输出，避免旧编码导致控制台日志再次乱码。
+
 ## [2.7.6] - 2026-06-23 14:17
 - 为 Electron 主进程补齐启动链路探针，覆盖 app ready、窗口创建、renderer.html 加载、telemetry/http 初始化完成等关键节点。
 - 为本地 HTTP 网关补齐监听成功、重复启动保护、POST /status 入站与端口错误探针，解决 `npm start` 后终端长期静默导致的误判问题。

@@ -9,14 +9,14 @@ module.exports = {
         if (macroTimer) clearTimeout(macroTimer);
         sessionState = 'working';
         // 【极致响应】：全面换装 5秒 保护时窗，实现秒级快速判定自愈
-        console.log(`[PROBE-STATE] 状态切入 [working] ➔ 启动5秒绝对自愈保护阀`);
+        console.log('【状态机】状态切入 working，启动 5 秒保护窗口');
         macroTimer = setTimeout(() => { sessionState = 'idle'; onTimeout(); }, 5000);
     },
     
     refreshWorking: (onTimeout) => {
         if (sessionState === 'working') {
             if (macroTimer) clearTimeout(macroTimer);
-            console.log(`[PROBE-STATE] 检测到数据在飞，5秒工作倒计时向后顺延 (Keep-Alive)`);
+            console.log('【状态机】检测到日志仍在更新，5 秒工作倒计时顺延');
             macroTimer = setTimeout(() => { sessionState = 'idle'; onTimeout(); }, 5000);
         }
     },
@@ -25,7 +25,7 @@ module.exports = {
         if (macroTimer) clearTimeout(macroTimer);
         if (sessionState === 'working' || sessionState === 'cohesion') {
             sessionState = 'cohesion';
-            console.log(`[PROBE-STATE] 阶段任务触发 done ➔ 状态切入 [cohesion] (5秒合流观察期展开，快速结算)`);
+            console.log('【状态机】阶段任务触发 done，切入 cohesion，进入 5 秒合流观察期');
             macroTimer = setTimeout(() => { sessionState = 'idle'; onTimeout(); }, 5000);
         }
     }

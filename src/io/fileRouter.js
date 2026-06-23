@@ -7,12 +7,12 @@ let currentActiveFile = null;
 
 module.exports = {
     bindRoute: (onRouteMessage) => {
-        console.log(`[PROBE-ROUTER] binding log route from ${fileScanner.getLogPath()}`);
+        console.log(`【日志路由】正在绑定日志目录：${fileScanner.getLogPath()}`);
         const todayFiles = fileScanner.getTodayJsonlFiles();
-        console.log(`[PROBE-ROUTER] cold scan found ${todayFiles.length} jsonl file(s) for today`);
+        console.log(`【日志路由】冷启动扫描到 ${todayFiles.length} 个今日日志文件`);
         if (todayFiles.length > 0) {
             todayFiles.sort((a, b) => b.mtime - a.mtime); currentActiveFile = todayFiles[0].filePath;
-            console.log(`[PROBE-ROUTER] active log file: ${path.basename(currentActiveFile)}`);
+            console.log(`【日志路由】当前活跃日志：${path.basename(currentActiveFile)}`);
             let baselineT = 0, baselineC = 0;
             todayFiles.forEach(f => {
                 if (f.filePath !== currentActiveFile) {
@@ -23,13 +23,12 @@ module.exports = {
             const res = turnAnalyzer.analyzeActiveFile(currentActiveFile, baselineT, baselineC);
             if (res) onRouteMessage(res.activeLines, true, res);
         } else {
-            console.log('[PROBE-ROUTER] no current-day jsonl files yet; waiting for watcher events');
+            console.log('【日志路由】暂未发现今日日志，等待监听器捕获新写入');
         }
         logWatcher.watch((filePath) => {
-            console.log(`[PROBE-ROUTER] routed change from ${path.basename(filePath)}`);
+            console.log(`【日志路由】收到文件变更：${path.basename(filePath)}`);
             if (currentActiveFile && filePath !== currentActiveFile) {
-                console.log(`[PROBE-ROUTER] active log switched to ${path.basename(filePath)}`);
-                console.log(`[PROBE-ROUTER] 检测到工作空间跨项目横转: ${path.basename(filePath)}`);
+                console.log(`【日志路由】活跃日志已切换到：${path.basename(filePath)}`);
                 let liveT = 0, liveC = 0;
                 fileScanner.getTodayJsonlFiles().forEach(f => {
                     if (f.filePath !== filePath) {

@@ -2,13 +2,12 @@
 const { ipcRenderer } = require('electron');
 
 window.onerror = function(message, source, lineno, colno, error) {
-    ipcRenderer.send('terminal-log', `[CRITICAL-RENDERER-ERROR] 线程异常: ${message}`);
+    ipcRenderer.send('terminal-log', `【渲染进程:严重错误】线程异常：${message}`);
 };
 
-// 【绝对对齐项目根目录】：因为 html 在根目录，此处直接以项目根目录为基准向下检索，永不脱轨
 const costManager = require('./src/cost/costManager.js');
 const historyLogger = require('./src/utils/historyLogger.js');
-const eventHandler = require('./src/view/eventHandler.js'); 
+const eventHandler = require('./src/view/eventHandler.js');
 const uiTimer = require('./src/view/uiTimer.js');
 const domTruncator = require('./src/utils/domTruncator.js');
 const audioChime = require('./src/utils/audioChime.js');
@@ -17,38 +16,39 @@ let lastRawTokens = 0, lastDayTokens = 0, lastLoggedToken = -1;
 let lastProbeState = null;
 
 const doms = {
-    statusText: document.getElementById('status-text'), 
+    statusText: document.getElementById('status-text'),
     logText: document.getElementById('log-text'),
-    timerText: document.getElementById('timer'), 
+    timerText: document.getElementById('timer'),
     tokenText: document.getElementById('token-counter'),
-    costDisplay: document.getElementById('cost-display'), 
+    costDisplay: document.getElementById('cost-display'),
     settingsPanel: document.getElementById('settings-panel'),
-    auditPanel: document.getElementById('audit-panel'), 
+    auditPanel: document.getElementById('audit-panel'),
     tbodyEl: document.getElementById('audit-tbody'),
     closeBtn: document.getElementById('close-btn'),
-    dayTokenText: document.getElementById('day-token-counter'), 
+    dayTokenText: document.getElementById('day-token-counter'),
     dayCostText: document.getElementById('day-cost-display')
 };
 
 eventHandler.init(doms, costManager, historyLogger, () => lastRawTokens, () => lastDayTokens);
-console.log('[PROBE-RENDERER] renderer booted; DOM handlers are bound');
+console.log('【渲染探针】渲染进程已启动，DOM 事件已绑定');
 
 ipcRenderer.on('status-update', (event, data) => {
     const { state, detail, tokens, dayTokens, costStr, dayCostStr, recoveredStartTime } = data;
     const rawTokens = parseInt(tokens || 0, 10);
+
     if (state !== lastProbeState) {
-        console.log(`[PROBE-RENDERER] status update state=${state || 'unknown'} detail=${detail || ''}`);
+        console.log(`【渲染探针】收到状态更新：状态=${state || '未知'}，详情=${detail || ''}`);
         lastProbeState = state;
     }
-    
-    lastRawTokens = rawTokens; 
+
+    lastRawTokens = rawTokens;
     lastDayTokens = parseInt(dayTokens || 0, 10);
-    
+
     if (doms.tokenText) doms.tokenText.innerText = `${(rawTokens / 1000).toFixed(1)}K`;
     if (doms.dayTokenText) doms.dayTokenText.innerText = `${(lastDayTokens / 1000).toFixed(1)}K`;
     if (doms.costDisplay) doms.costDisplay.innerText = costStr || '¥0.0000';
     if (doms.dayCostText) doms.dayCostText.innerText = dayCostStr || '¥0.0000';
-    
+
     if (doms.statusText) doms.statusText.innerText = detail || '';
     const container = document.querySelector('.window-container') || document.body;
     if (container) {
@@ -72,5 +72,6 @@ ipcRenderer.on('status-update', (event, data) => {
     } else if (state !== 'attention') {
         uiTimer.stop(doms.timerText, true);
     }
+
     document.body.offsetHeight;
 });

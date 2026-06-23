@@ -31,7 +31,7 @@ module.exports = {
             }
             const result = logParser.parse(activeLines);
             sessionManager.refreshWorking(() => broadcast('done', '输出答案完毕'));
-            console.log(`[PROBE-HUB] 日志流更新 ➔ 活体行数: ${activeLines?.length} | 状态机当前阶: ${sessionManager.getState()}`);
+            console.log(`【遥测枢纽】日志流更新：活跃行数=${activeLines?.length}，状态机=${sessionManager.getState()}`);
 
             if (fileStatus && !fileStatus.isMidTurnActive) {
                 sessionManager.triggerDone(() => broadcast('done', '输出答案完毕'));
@@ -46,7 +46,7 @@ module.exports = {
         });
     },
     handleHttpStatus: (state, detail) => {
-        console.log(`[PROBE-HUB] 收到本地HTTP状态通知 ➔ 行为: ${state} | 详情词根: ${detail}`);
+        console.log(`【遥测枢纽】收到本地 HTTP 状态通知：状态=${state}，详情=${detail || ''}`);
         if (state === 'working') {
             if (!sessionManager.isActive()) logParser.resetTurn();
             sessionManager.triggerWorking(() => broadcast('done', '输出答案完毕'));

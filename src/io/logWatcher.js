@@ -4,20 +4,20 @@ const logPath = require('path').join(process.env.USERPROFILE, '.claude', 'projec
 
 module.exports = {
     watch: (onRawChange) => {
-        console.log(`[PROBE-WATCHER] starting chokidar on ${logPath}`);
+        console.log(`【文件监听】正在启动 chokidar：${logPath}`);
         const watcher = chokidar.watch(logPath, { ignoreInitial: true });
         watcher.on('ready', () => {
-            console.log('[PROBE-WATCHER] chokidar ready');
+            console.log('【文件监听】chokidar 已就绪');
         });
         watcher.on('add', (filePath) => {
-            if (filePath.endsWith('.jsonl')) console.log(`[PROBE-WATCHER] jsonl added: ${filePath}`);
+            if (filePath.endsWith('.jsonl')) console.log(`【文件监听】新增 JSONL：${filePath}`);
         });
         watcher.on('error', (err) => {
-            console.log(`[PROBE-WATCHER:ERROR] ${err.message}`);
+            console.log(`【文件监听:错误】${err.message}`);
         });
         watcher.on('change', (filePath) => {
             if (!filePath.endsWith('.jsonl')) return;
-            console.log(`[PROBE-WATCHER] jsonl changed: ${filePath}`);
+            console.log(`【文件监听】JSONL 已变更：${filePath}`);
             if (changeThrottleTimer) return;
             changeThrottleTimer = setTimeout(() => {
                 changeThrottleTimer = null;

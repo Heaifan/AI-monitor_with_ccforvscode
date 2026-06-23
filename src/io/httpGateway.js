@@ -8,20 +8,20 @@ let httpServer = null;
 module.exports = {
     start: (sendFn) => {
         if (httpServer) {
-            console.log('[PROBE-HTTP] gateway already listening on 127.0.0.1:8080');
+            console.log('【HTTP探针】网关已在 127.0.0.1:8080 监听，跳过重复启动');
             return;
         }
         server.post('/status', (req, res) => {
             const { state, detail } = req.body;
-            console.log(`[PROBE-HTTP] POST /status state=${state || 'unknown'} detail=${detail || ''}`);
+            console.log(`【HTTP探针】收到 /status 状态=${state || '未知'} 详情=${detail || ''}`);
             telemetryHub.handleHttpStatus(state, detail);
             res.sendStatus(200);
         });
         httpServer = server.listen(8080, '127.0.0.1', () => {
-            console.log('[PROBE-HTTP] gateway listening at http://127.0.0.1:8080/status');
+            console.log('【HTTP探针】网关已监听 http://127.0.0.1:8080/status');
         });
         httpServer.on('error', (err) => {
-            console.log(`[PROBE-HTTP:ERROR] failed to listen on 8080: ${err.message}`);
+            console.log(`【HTTP探针:错误】监听 8080 失败：${err.message}`);
         });
     }
 };

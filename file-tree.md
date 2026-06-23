@@ -1,13 +1,13 @@
 # file-tree.md
 
 ai_monitor-app/
-├── renderer.html
+├── renderer.html                      # 悬浮窗页面与 CSP 安全策略
 ├── package.json
 ├── package-lock.json
 ├── changelog.md
 ├── file-tree.md
 ├── src/
-│   ├── main.js                         # Electron 主进程入口，创建悬浮窗并启动监控链路
+│   ├── main.js                         # Electron 主进程入口、中文启动探针与渲染日志转发
 │   ├── cost/                           # 费用与 token 计价域
 │   │   ├── billingEngine.js            # usage 行解析、token 与费用计算
 │   │   ├── costManager.js              # 计价门面与兼容接口聚合
@@ -28,7 +28,7 @@ ai_monitor-app/
 │   │   └── historyLogger.js            # 回合审计历史记录
 │   └── view/                           # 渲染进程 UI 逻辑
 │       ├── eventHandler.js             # 点击、面板、关闭等事件绑定
-│       ├── renderer.js                 # status-update 消费与 DOM 映射
+│       ├── renderer.js                 # status-update 消费、DOM 映射与中文渲染探针
 │       └── uiTimer.js                  # 回合计时器
 └── vscode-bridge/
     ├── package.json                    # VS Code 扩展声明

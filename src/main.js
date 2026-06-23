@@ -5,22 +5,23 @@ const httpGateway = require('./io/httpGateway');
 let win = null;
 
 function createWindow() {
-    console.log('[PROBE-BOOT] create Electron overlay window');
+    console.log('【启动探针】正在创建 Electron 悬浮窗');
     win = new BrowserWindow({
         width: 280, height: 86, x: Math.round((require('electron').screen.getPrimaryDisplay().workAreaSize.width / 2) - 140), y: 15,
         transparent: true, frame: false, alwaysOnTop: true, resizable: false,
         webPreferences: { nodeIntegration: true, contextIsolation: false }
     });
     win.webContents.on('console-message', (event, level, message, line, sourceId) => {
-        console.log(`[PROBE-RENDERER:${level}] ${message} (${sourceId}:${line})`);
+        if (message.includes('Electron Security Warning')) return;
+        console.log(`【渲染探针:${level}】${message} (${sourceId}:${line})`);
     });
     win.loadFile('renderer.html');
     win.webContents.on('did-finish-load', () => {
-        console.log('[PROBE-BOOT] renderer.html loaded; initializing telemetry hub and HTTP gateway');
+        console.log('【启动探针】renderer.html 已加载，开始初始化遥测枢纽与 HTTP 网关');
         const sendFn = (channel, payload) => { if (win) win.webContents.send(channel, payload); };
         telemetryHub.initialize(sendFn);
         httpGateway.start(sendFn);
-        console.log('[PROBE-BOOT] startup pipeline complete');
+        console.log('【启动探针】启动链路初始化完成');
     });
 }
 
@@ -29,6 +30,6 @@ ipcMain.on('terminal-log', (e, msg) => { console.log(msg); });
 ipcMain.on('window-move', (e, { deltaX, deltaY }) => { if (win) { const [x, y] = win.getPosition(); win.setPosition(x + deltaX, y + deltaY); } });
 ipcMain.on('close-app', () => app.quit());
 app.whenReady().then(() => {
-    console.log('[PROBE-BOOT] Electron app ready');
+    console.log('【启动探针】Electron 应用已就绪');
     createWindow();
 });
