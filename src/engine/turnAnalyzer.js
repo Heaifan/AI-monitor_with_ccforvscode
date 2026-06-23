@@ -40,6 +40,14 @@ function computeFileMaxTokensAndCost(filePath) {
     return computeUsageFromLines(getTodayLines(filePath));
 }
 
+function computeFilesMaxTokensAndCost(filePaths) {
+    const lines = [];
+    (filePaths || []).forEach((filePath) => {
+        lines.push(...getTodayLines(filePath));
+    });
+    return computeUsageFromLines(lines);
+}
+
 function findTurnBoundary(lines) {
     let lastEndIdx = -1;
     let prevEndIdx = -1;
@@ -102,4 +110,4 @@ function analyzeActiveFile(filePath, dayTokensBaseline, dayCostBaseline) {
     };
 }
 
-module.exports = { computeFileMaxTokensAndCost, analyzeActiveFile };
+module.exports = { computeFileMaxTokensAndCost, computeFilesMaxTokensAndCost, analyzeActiveFile };

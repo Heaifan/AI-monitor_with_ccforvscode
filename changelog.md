@@ -1,5 +1,12 @@
 # changelog.md
 
+## [2.8.0] - 2026-06-23 14:45
+- 修复今日账单跨 JSONL 文件重复计算的问题：多个会话分支文件中重复落盘的同一 `message.id` 现在会在全局日账单层去重。
+- `fileRouter.js` 的日基线改为“今日所有日志合并去重总量 - 当前活跃文件去重总量”，避免 duplicate branch 文件把今日花费抬高。
+- 取消费用区域的美元/人民币点击切换，DeepSeek 官方价格表本身为人民币计价，前台统一显示官方人民币费用。
+- 更新费用区域 title 文案，避免继续提示“点击切换币种”。
+- 增加 `.editorconfig` 与 `.vscode/settings.json`，固定源码 UTF-8，并让 VS Code 新建 PowerShell 终端自动切换到 UTF-8 code page。
+
 ## [2.7.9] - 2026-06-23 14:40
 - 修正 DeepSeek v4-flash 计费算法：缓存命中输入按 0.02 元/百万 tokens，缓存未命中输入按 1 元/百万 tokens，输出按 2 元/百万 tokens。
 - 账单统计改为解析 JSONL `usage` 对象并按 assistant `message.id` 去重累计，避免同一响应多次落盘导致重复计费。

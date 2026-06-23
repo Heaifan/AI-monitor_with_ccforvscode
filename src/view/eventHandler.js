@@ -72,29 +72,17 @@ module.exports = {
             else showSettings(doms);
         });
 
-        const refreshCostText = () => {
-            if (doms.costDisplay && costManager.calculateCostString) {
-                doms.costDisplay.innerText = costManager.calculateCostString(getTokensFn());
-            }
-            if (doms.dayCostText && costManager.calculateCostString) {
-                doms.dayCostText.innerText = costManager.calculateCostString(getDayTokensFn());
-            }
-        };
-
-        const toggleCurrency = (e) => {
+        const keepOfficialCurrency = (e) => {
             e.stopPropagation();
-            if (costManager.toggleCurrency) costManager.toggleCurrency();
-            refreshCostText();
         };
-        bindPointer(doms.costDisplay, toggleCurrency);
-        bindPointer(doms.dayCostText, toggleCurrency);
+        bindPointer(doms.costDisplay, keepOfficialCurrency);
+        bindPointer(doms.dayCostText, keepOfficialCurrency);
 
         bindPointer(saveBtn, (e) => {
             e.stopPropagation();
             if (costManager.setPrice && cfgPrice) costManager.setPrice(parseFloat(cfgPrice.value) || 0);
             if (costManager.setRate && cfgRate) costManager.setRate(parseFloat(cfgRate.value) || 1);
             collapsePanels(doms);
-            refreshCostText();
         });
 
         bindPointer(rateStatus, async (e) => {
