@@ -1,17 +1,21 @@
-let watermark = 0;
+let roundStartWatermark = 0;
 let lastAbsoluteTotal = 0;
 let interimTokens = 0;
+let dayBaseline = 0;
 
 module.exports = {
-    resetTurn: () => { interimTokens = 0; },
-    setWatermark: (val) => { watermark = val; lastAbsoluteTotal = val; },
+    resetTurn: () => {
+        roundStartWatermark = lastAbsoluteTotal; 
+        interimTokens = 0;
+    },
+    setWatermark: (val) => { lastAbsoluteTotal = val; roundStartWatermark = val; },
+    setDayBaseline: (val) => { dayBaseline = val; },
+    getRoundTokens: () => Math.max(0, lastAbsoluteTotal - roundStartWatermark),
+    getLiveDayTotal: () => dayBaseline + lastAbsoluteTotal,
     parse: (line, isColdStart) => {
         if (!line) return null;
-        
         const hasUsage = line.includes('"usage"');
-        const hasEndTurn = line.includes('"stop_reason":"end_turn"');
         
-        // 1. 若当前行包含确凿用量，先无条件提取并更新大盘绝对值
         if (hasUsage) {
             const inputMatch = line.match(/"input_tokens":\s*(\d+)/);
             const outputMatch = line.match(/"output_tokens":\s*(\d+)/);
@@ -19,37 +23,29 @@ module.exports = {
             const input = inputMatch ? parseInt(inputMatch[1], 10) : 0;
             const output = outputMatch ? parseInt(outputMatch[1], 10) : 0;
             const cache = cacheMatch ? parseInt(cacheMatch[1], 10) : 0;
-            
             lastAbsoluteTotal = input + output + cache;
-            interimTokens = Math.max(0, lastAbsoluteTotal - watermark);
+            interimTokens = Math.max(0, lastAbsoluteTotal - roundStartWatermark);
         }
         
-        // 2. 【核心时序修复】：若当前行判定为回合完工（无论是否复合包含 usage）
-        // 必须死锁在水位线提升之前，精准换算出当前 Turn 的物理净增量
-        if (hasEndTurn) {
-            const finalDelta = Math.max(0, lastAbsoluteTotal - watermark);
-            watermark = lastAbsoluteTotal; // 换算完毕后，水位线指针才允许安全后移
-            interimTokens = 0;
-            return { action: 'send', state: 'done', tokens: String(finalDelta), dayTokens: String(lastAbsoluteTotal) };
+        const currentRoundTokens = Math.max(interimTokens, lastAbsoluteTotal - roundStartWatermark);
+        const liveDayTotal = dayBaseline + lastAbsoluteTotal;
+        
+        let detailText = '多维内核深度思考';
+        if (line.includes('"tool_use"') || line.includes('"tool_result"') || line.includes('"stdout"')) {
+            detailText = '正在执行沙箱工具';
+        }
+        const textMatches = line.match(/"(?:text|content|thought|argument|name|stdout|stderr)":"((?:[^"\\]|\\.)*)"/g);
+        if (textMatches) {
+            textMatches.forEach(m => {
+                const payloadLen = m.length - 12;
+                if (payloadLen > 0) interimTokens += Math.ceil(payloadLen / 3);
+            });
+        } else if (line.length > 20) {
+            interimTokens += Math.ceil(line.length / 5);
         }
         
-        // 3. 若只是中途的标准计价行（非完工状态）
-        if (hasUsage) {
-            return { action: 'send', state: 'working', detail: '多维内核深度思考', tokens: String(interimTokens), dayTokens: String(lastAbsoluteTotal) };
-        }
-        
-        // 4. 流式文本负载动态高频内插追溯
-        if (line.includes('"text"') || line.includes('"content"') || line.includes('"thought"')) {
-            const textMatches = line.match(/"(?:text|content|thought|argument)":"((?:[^"\\]|\\.)*)"/g);
-            if (textMatches) {
-                textMatches.forEach(m => {
-                    const payloadLen = m.length - 12;
-                    if (payloadLen > 0) interimTokens += Math.ceil(payloadLen / 3);
-                });
-            }
-            return { action: 'send', state: 'working', detail: '多维内核深度思考', tokens: String(interimTokens), dayTokens: String(watermark + interimTokens) };
-        }
-        
-        return null;
+        // 【核心单向累加】：严格只做加法，任何中间层波折一律不得回滚降低
+        const finalInterim = Math.max(interimTokens, lastAbsoluteTotal - roundStartWatermark);
+        return { action: 'send', state: 'working', detail: detailText, tokens: String(finalInterim), dayTokens: String(liveDayTotal) };
     }
 };

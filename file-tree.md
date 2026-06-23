@@ -12,4 +12,5 @@ ai_monitor-app/
     ├── eventHandler.js
     ├── historyLogger.js
     ├── logParser.js
-    └── logWatcher.js
+    ├── logWatcher.js
+    └── sessionManager.js

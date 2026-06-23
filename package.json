@@ -4,31 +4,45 @@
   "main": "src/main.js",
   "scripts": {
     "start": "electron .",
-    "dist": "electron-builder"
+    "build": "electron-builder"
   },
   "dependencies": {
     "chokidar": "^3.6.0",
     "express": "^4.19.2"
   },
   "devDependencies": {
-    "electron": "^33.0.0",
+    "electron": "^30.0.0",
     "electron-builder": "^24.13.3"
   },
   "build": {
-    "appId": "com.heai.aimonitor",
+    "appId": "com.heaifan.aimonitor",
     "productName": "AI监控仪表盘",
     "directories": {
       "output": "dist"
-    },
-    "win": {
-      "target": [
-        "portable"
-      ]
     },
     "files": [
       "src/**/*",
       "renderer.html",
       "package.json"
-    ]
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ],
+      "requestedExecutionLevel": "asInvoker"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
   }
 }
