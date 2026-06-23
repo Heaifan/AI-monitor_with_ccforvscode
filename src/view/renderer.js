@@ -15,6 +15,14 @@ const audioChime = require('./src/utils/audioChime.js');
 let lastRawTokens = 0, lastDayTokens = 0, lastLoggedToken = -1;
 let lastProbeState = null;
 
+function formatTokenCount(tokens) {
+    const value = tokens || 0;
+    if (value >= 1_000_000_000) return `${(value / 1_000_000_000).toFixed(2)}B`;
+    if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(2)}M`;
+    if (value >= 1_000) return `${(value / 1_000).toFixed(1)}K`;
+    return String(value);
+}
+
 const doms = {
     statusText: document.getElementById('status-text'),
     logText: document.getElementById('log-text'),
@@ -44,8 +52,8 @@ ipcRenderer.on('status-update', (event, data) => {
     lastRawTokens = rawTokens;
     lastDayTokens = parseInt(dayTokens || 0, 10);
 
-    if (doms.tokenText) doms.tokenText.innerText = `${(rawTokens / 1000).toFixed(1)}K`;
-    if (doms.dayTokenText) doms.dayTokenText.innerText = `${(lastDayTokens / 1000).toFixed(1)}K`;
+    if (doms.tokenText) doms.tokenText.innerText = formatTokenCount(rawTokens);
+    if (doms.dayTokenText) doms.dayTokenText.innerText = formatTokenCount(lastDayTokens);
     if (doms.costDisplay) doms.costDisplay.innerText = costStr || '¥0.0000';
     if (doms.dayCostText) doms.dayCostText.innerText = dayCostStr || '¥0.0000';
 

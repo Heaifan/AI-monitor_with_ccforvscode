@@ -21,7 +21,12 @@ module.exports = {
         fileRouter.bindRoute((activeLines, isColdStart, fileStatus) => {
             if (isColdStart && fileStatus) {
                 // 【核心拉正】：成对传入文件极值水位，绝不允许 Token 和 Cost 出现时序和物理跨界
-                logParser.setWatermark(fileStatus.latestFileMaxTokens, fileStatus.latestFileMaxCost);
+                logParser.setWatermark(
+                    fileStatus.latestFileMaxTokens,
+                    fileStatus.latestFileMaxCost,
+                    fileStatus.watermarkTokens,
+                    fileStatus.watermarkCost
+                );
                 logParser.setDayBaseline(fileStatus.dayTokensBaseline, fileStatus.dayCostBaseline);
                 if (fileStatus.isMidTurnActive) sessionManager.triggerWorking(() => broadcast('done', '输出答案完毕'));
                 const curState = sessionManager.isActive() ? 'working' : 'done';

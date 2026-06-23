@@ -1,5 +1,12 @@
 # changelog.md
 
+## [2.7.9] - 2026-06-23 14:40
+- 修正 DeepSeek v4-flash 计费算法：缓存命中输入按 0.02 元/百万 tokens，缓存未命中输入按 1 元/百万 tokens，输出按 2 元/百万 tokens。
+- 账单统计改为解析 JSONL `usage` 对象并按 assistant `message.id` 去重累计，避免同一响应多次落盘导致重复计费。
+- 当天用量改为按每行 `timestamp` 归属本地日期过滤，不再因为文件 mtime 是今天就把历史会话行全部计入今日账单。
+- 冷启动、跨文件基线与活跃回合统计统一使用去重后的官方 usage 口径，替代旧版“单文件最大 usage 水位”算法。
+- 前台 token 显示支持 K/M/B 自动单位，便于和 DeepSeek 官方用量面板对账。
+
 ## [2.7.8] - 2026-06-23 14:27
 - 修复重构后点击事件“看似全部失效”的问题：恢复计时器审计面板、Token 配置面板、费用切换、保存配置、同步汇率、复制审计、关闭应用与窗口拖动等 pointer 事件。
 - `eventHandler.js` 改为内部维护当前打开面板状态，不再依赖已删除的旧版 `historyLogger.isOpen()` / `costManager.isOpen()` 状态。
